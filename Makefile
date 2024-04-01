@@ -8,13 +8,13 @@ SRC_EXT = c
 # Path to the source directory, relative to the makefile
 SRC_PATH = .
 # Space-separated pkg-config libraries used by this project
-LIBS = sdl12_compat SDL_ttf x11
+LIBS = sdl2 SDL2_ttf x11
 # General compiler flags
-COMPILE_FLAGS = -Wall -Wextra
+COMPILE_FLAGS = -Wall -Wextra -w
 # Additional release-specific flags
 RCOMPILE_FLAGS = -D NDEBUG
 # Additional debug-specific flags
-DCOMPILE_FLAGS = -D DEBUG
+DCOMPILE_FLAGS = -D DEBUG -O0 -ggdb3
 # Add additional include paths
 INCLUDES = -I $(SRC_PATH)
 # General linker settings

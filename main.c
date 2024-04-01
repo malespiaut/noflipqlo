@@ -13,286 +13,263 @@
 
 int past_m = 0;
 
+bool done = false;
 bool twentyfourh = true;
 bool fullscreen = false;
 
-// SDL_Surface *screen;
+TTF_Font* font_time_g = NULL;
+TTF_Font* font_mode_g = NULL;
+const SDL_Color font_color_white_k = {176, 176, 176};
 
-TTF_Font* FONT_TIME = NULL;
-TTF_Font* FONT_MODE = NULL;
-SDL_Color FONT_COLOR_WHITE = {176, 176, 176};
-
-SDL_Rect hourBackground;
-SDL_Rect minBackground;
+SDL_FRect background_hours = {0};
+SDL_FRect background_minutes = {0};
 int spacing = 0;
 
-int customHeight = 0;
-int customWidth = 0;
-int screenWidth = 0;
-int screenHeight = 0;
-const int DEFAULT_WIDTH = 640;
-const int DEFAULT_HEIGHT = 480;
+int screen_height_custom = 0;
+int screen_width_custom = 0;
 
-const char* FONT_FILE_BOLD = "/usr/share/fonts/droid/DroidSans-Bold.ttf";
-const char* FONT_FILE_FALLBACK = "/usr/share/fonts/truetype/ubuntu-font-family/Ubuntu-B.ttf";
-const char* FONT_CUSTOM_FILE = "";
-const Uint32 COLOR_FONT = 0xb7b7b7FF;
-const Uint32 COLOR_BACKGROUND = 0x0a0a0a;
+#define screen_width_k 640
+#define screen_height_k 480
+
+#define font_bold_path_k "/usr/share/fonts/droid/DroidSans-Bold.ttf"
+#define font_fallback_path_k "/usr/share/fonts/truetype/ubuntu-font-family/Ubuntu-B.ttf"
+const SDL_Color font_color_k = {.r = 183, .g = 183, .b = 183, .a = 255};
+const SDL_Color background_color_k = {.r = 10, .g = 10, .b = 10, .a = 255};
+
+char* font_custom_path_g = "";
 
 SDL_Window* window_g = NULL;
 SDL_Renderer* renderer_g = NULL;
 
-void
-checkTime(struct tm** time_i, Uint32* ms_to_next_minute)
+static int
+resources_init(void)
 {
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
-  *time_i = localtime(&tv.tv_sec);
-
-  Uint32 seconds_to_next_minute = 60 - (*time_i)->tm_sec;
-  *ms_to_next_minute = seconds_to_next_minute * 1000 - tv.tv_usec / 1000;
-}
-
-Uint32
-checkEmit(Uint32 interval, void* param)
-{
-  struct tm* time_i;
-  Uint32 ms_to_next_minute;
-
-  checkTime(&time_i, &ms_to_next_minute);
-
-  if (time_i->tm_min != past_m)
+  if (strcmp("", font_custom_path_g) == 0)
   {
-    SDL_Event e;
-    e.type = SDL_USEREVENT;
-    e.user.code = 0;
-    e.user.data1 = NULL;
-    e.user.data2 = NULL;
-    SDL_PushEvent(&e);
-    printf("Time is: %d : %d\n", time_i->tm_hour, time_i->tm_min);
-    past_m = time_i->tm_min;
-  }
-
-  // Don't wake up until the next minute.
-  interval = ms_to_next_minute;
-  // Make sure interval is positive.
-  // Should only matter for leap seconds.
-  if (interval <= 0)
-  {
-    interval = 500;
-  }
-  return (interval);
-}
-int
-initSDL()
-{
-  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) < 0)
-  {
-    printf("Unable to init SDL: %s\n", SDL_GetError());
-    return 2;
-  }
-  return 0;
-}
-
-int
-initResources()
-{
-  // XXX: screen = SDL_SetVideoMode(0,0,32, SDL_FULLSCREEN);
-  // screenHeight = screen->h;
-  // screenWidth = screen->w;
-  // printf("Full Screen Resolution : %dx%d\n", screenWidth, screenHeight);
-  if (fullscreen)
-  {
-    customHeight = screenHeight;
-    customWidth = screenWidth;
-  }
-  if (strcmp("", FONT_CUSTOM_FILE) == 0)
-  {
-    FONT_TIME = TTF_OpenFont(FONT_FILE_BOLD, customHeight / 2);
-    FONT_MODE = TTF_OpenFont(FONT_FILE_BOLD, customHeight / 15);
+    font_time_g = TTF_OpenFont(font_bold_path_k, screen_height_custom / 2);
+    font_mode_g = TTF_OpenFont(font_bold_path_k, screen_height_custom / 15);
   }
   else
   {
-    FONT_TIME = TTF_OpenFont(FONT_CUSTOM_FILE, customHeight / 2);
-    FONT_TIME = TTF_OpenFont(FONT_CUSTOM_FILE, customHeight / 15);
+    font_time_g = TTF_OpenFont(font_custom_path_g, screen_height_custom / 2);
+    font_time_g = TTF_OpenFont(font_custom_path_g, screen_height_custom / 15);
   }
 
   /* CALCULATE BACKGROUND COORDINATES */
-  hourBackground.y = 0.2 * customHeight;
-  hourBackground.x = 0.5 * (customWidth - ((0.031) * customWidth) - (1.2 * customHeight));
-  hourBackground.w = customHeight * 0.6;
-  hourBackground.h = hourBackground.w;
-  // printf(" Hour x coordinate %d\n Hour y coordinate %d\n", hourBackground.y, hourBackground.x);
-  spacing = 0.031 * customWidth;
-  minBackground.x = hourBackground.x + (0.6 * customHeight) + spacing;
-  minBackground.y = hourBackground.y;
-  minBackground.h = hourBackground.h;
-  minBackground.w = hourBackground.w;
-  // printf (" Minute x coordinate %d\n Minute y coordinate %d\n", minBackground.x, minBackground.y);
-  // SDL_AddTimer(500, checkEmit, NULL);
+  background_hours.y = 0.2f * screen_height_custom;
+  background_hours.x = 0.5f * (screen_width_custom - ((0.031f) * screen_width_custom) - (1.2f * screen_height_custom));
+  background_hours.w = screen_height_custom * 0.6f;
+  background_hours.h = background_hours.w;
+
+  spacing = 0.031f * screen_width_custom;
+
+  background_minutes.x = background_hours.x + (0.6f * screen_height_custom) + spacing;
+  background_minutes.y = background_hours.y;
+  background_minutes.h = background_hours.h;
+  background_minutes.w = background_hours.w;
   return 0;
 }
 
-void
-set_pixel(SDL_Surface* surface, int x, int y, Uint32 pixel)
+static void
+resources_deinit(void)
 {
-  Uint8* target_pixel = (Uint8*)surface->pixels + y * surface->pitch + x * 4;
-  *(Uint32*)target_pixel = pixel;
+  TTF_CloseFont(font_time_g);
+  TTF_CloseFont(font_mode_g);
 }
 
-void
-fill_circle(SDL_Surface* surface, int cx, int cy, int radius, Uint32 pixel)
+static void
+circle_fill(SDL_FPoint p, float radius, SDL_Color c)
 {
-  static const int BPP = 4;
-  double r = (double)radius;
-  for (double dy = 1; dy <= r; dy += 1.0)
+  SDL_SetRenderDrawColor(renderer_g, c.r, c.g, c.b, c.a);
+  for (float dy = 1.0f; dy <= radius; dy += 1.0f)
   {
-    double dx = floor(sqrt((2.0 * r * dy) - (dy * dy)));
-    int x = cx - dx;
-    Uint8* target_pixel_a = (Uint8*)surface->pixels + ((int)(cy + r - dy)) * surface->pitch + x * BPP;
-    Uint8* target_pixel_b = (Uint8*)surface->pixels + ((int)(cy - r + dy)) * surface->pitch + x * BPP;
+    float dx = floorf(sqrtf((2.0f * radius * dy) - (dy * dy)));
+    float x = p.x - dx;
+    SDL_RenderDrawLineF(renderer_g, p.x - dx, p.y + dy - radius, p.x + dx, p.y + dy - radius);
+    SDL_RenderDrawLineF(renderer_g, p.x - dx, p.y - dy + radius, p.x + dx, p.y - dy + radius);
+  }
+}
 
-    for (; x <= cx + dx; x++)
+static void
+background_rounded_draw(SDL_FRect* coordinates)
+{
+  int background_size = screen_height_custom * 0.6f;
+  float radius = 10.0f;
+  for (int i = 0; i < background_size - radius; i++)
+  {
+    for (int j = 0; j < background_size - radius; j++)
     {
-      *(Uint32*)target_pixel_a = pixel;
-      *(Uint32*)target_pixel_b = pixel;
-      target_pixel_a += BPP;
-      target_pixel_b += BPP;
+      circle_fill((SDL_FPoint){.x = coordinates->x + j, .y = coordinates->y + i}, radius, (SDL_Color){.r = 10, .g = 10, .b = 10, .a = 255});
     }
   }
 }
 
-void
-drawRoundedBackground(SDL_Surface* surface, SDL_Rect* coordinates)
+static SDL_FPoint
+coordinates_get(SDL_FRect* background, SDL_Surface* foreground)
 {
-  int backgroundSize = customHeight * 0.6;
-  int radius = 10;
-  // printf("Background size %d\n", backgroundSize);
-  for (int i = 0; i < backgroundSize - radius; i++)
-  {
-    for (int j = 0; j < backgroundSize - radius; j++)
-    {
-      fill_circle(surface, coordinates->x + j, coordinates->y + i, radius, COLOR_BACKGROUND);
-    }
-  }
-  // XXX: SDL_Flip(surface);
+  int dx = (background->w - foreground->w) * 0.5f;
+  int dy = (background->h - foreground->h) * 0.5f;
+
+  return (SDL_FPoint){
+    .x = background->x + dx,
+    .y = background->y + dy,
+  };
 }
 
-SDL_Rect
-getCoordinates(SDL_Rect* background, SDL_Surface* foreground)
+static void
+divider_draw(void)
 {
-  SDL_Rect cord;
-  int dx = (background->w - foreground->w) * 0.5;
-  cord.x = background->x + dx;
-  int dy = (background->h - foreground->h) * 0.5;
-  cord.y = background->y + dy;
-  // printf("dx = %d : dy = %d\n", dx, dy);
-  // printf("Text Coordinates x %d : y %d\n", cord.x, cord.y);
-  return cord;
+  const SDL_FRect line = {
+    .h = screen_height_custom * 0.0051f,
+    .w = screen_width_custom,
+    .x = 0,
+    .y = (screen_height_custom * 0.5f) - (screen_height_custom * 0.0051f),
+  };
+
+  SDL_SetRenderDrawColor(renderer_g, 0, 0, 0, 255);
+  SDL_RenderFillRectF(renderer_g, &line);
 }
 
-void
-drawDivider(SDL_Surface* surface)
+static void
+ampm_draw(struct tm* _time)
 {
-  SDL_Rect line;
-  line.h = customHeight * 0.0051;
-  line.w = customWidth;
-  line.x = 0;
-  line.y = (customHeight * 0.5) - line.h;
-  // printf("Divider properties\n\tHeight %d\n\tWidth %d\n\tCoordinate x %d\n\tCoordinate y %d\n", line.h, line.w, line.x, line.y);
-  // SDL_FillRect(surface, &line, SDL_MapRGBA(surface->format, 0,0,0,0));
-  // XXX: SDL_Flip(surface);
-}
-
-void
-drawAMPM(SDL_Surface* surface, struct tm* _time)
-{
-  SDL_Rect cords;
-  cords.x = (hourBackground.h * 0.024) + hourBackground.x;
-  cords.y = (hourBackground.h * 0.071) + hourBackground.y;
-  // printf("AM/PM position\n\tx %d\n\ty %d\n", cords.x, cords.y);
-  char mode[3];
+  SDL_FPoint coordinates = {
+    .x = (background_hours.h * 0.024f) + background_hours.x,
+    .y = (background_hours.h * 0.071f) + background_hours.y,
+  };
+  char mode[3] = {0};
   strftime(mode, 3, "%p", _time);
-  SDL_Surface* AMPM = TTF_RenderText_Blended(FONT_MODE, (const char*)mode, FONT_COLOR_WHITE);
-  // SDL_BlitSurface(AMPM, 0, surface, &cords);
-  // XXX: SDL_Flip(surface);
+
+  SDL_Surface* ampm = TTF_RenderText_Blended(font_mode_g, (const char*)mode, font_color_white_k);
+  SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer_g, ampm);
+  SDL_FreeSurface(ampm);
+  SDL_FRect ampm_dstrect = {.x = coordinates.x, .y = coordinates.y, .w = ampm->w, .h = ampm->h};
+  SDL_RenderCopyF(renderer_g, texture, NULL, &ampm_dstrect);
+  SDL_DestroyTexture(texture);
 }
 
-void
-drawTime(SDL_Surface* surface, struct tm* _time)
+static void
+time_draw(struct tm* _time)
 {
-  char hour[3];
+  char hour[3] = {0};
   if (twentyfourh)
+  {
     strftime(hour, 3, "%H", _time);
+  }
   else
+  {
     strftime(hour, 3, "%I", _time);
-  char minutes[3];
+  }
+  char minutes[3] = {0};
   strftime(minutes, 3, "%M", _time);
+
   int h = atoi(hour);
-  // printf("Current time is %s : %s\n stripped hour ? %d\n", hour, minutes,h);
-  SDL_Rect coordinates;
-  char buff[2];
+  char buff[2] = {0};
   sprintf(buff, "%d", h);
-  SDL_Surface* text = TTF_RenderText_Blended(FONT_TIME, buff, FONT_COLOR_WHITE);
-  coordinates = getCoordinates(&hourBackground, text);
-  // SDL_BlitSurface(text, 0, screen, &coordinates);
-  text = TTF_RenderText_Blended(FONT_TIME, (const char*)minutes, FONT_COLOR_WHITE);
-  coordinates = getCoordinates(&minBackground, text);
-  // SDL_BlitSurface(text, 0, screen, &coordinates);
-  // XXX: SDL_Flip(surface);
+
+  SDL_Surface* text = TTF_RenderText_Blended(font_time_g, buff, font_color_white_k);
+  SDL_FPoint coordinates = coordinates_get(&background_hours, text);
+  SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer_g, text);
+  SDL_FreeSurface(text);
+  SDL_FRect hours_dstrect = {.x = coordinates.x, .y = coordinates.y, .w = text->w, .h = text->h};
+  SDL_RenderCopyF(renderer_g, texture, NULL, &hours_dstrect);
+  SDL_DestroyTexture(texture);
+
+  text = TTF_RenderText_Blended(font_time_g, (const char*)minutes, font_color_white_k);
+  coordinates = coordinates_get(&background_minutes, text);
+  texture = SDL_CreateTextureFromSurface(renderer_g, text);
+  SDL_FreeSurface(text);
+  SDL_FRect minutes_dstrect = {.x = coordinates.x, .y = coordinates.y, .w = text->w, .h = text->h};
+  SDL_RenderCopyF(renderer_g, texture, NULL, &minutes_dstrect);
+  SDL_DestroyTexture(texture);
 }
 
-void
-drawAll(void)
+static void
+draw(void)
 {
-  // SDL_FillRect(screen, 0, SDL_MapRGB(screen->format, 0, 0, 0));
-  time_t rawTime;
-  struct tm* _time;
+  SDL_SetRenderDrawColor(renderer_g, 0, 0, 0, 255);
+  SDL_RenderClear(renderer_g);
+
+  time_t rawTime = {0};
   time(&rawTime);
-  _time = localtime(&rawTime);
-  /*
-  drawRoundedBackground(screen, &hourBackground);
-  drawRoundedBackground(screen, &minBackground);
-  drawTime(screen, _time);
+  struct tm* _time = localtime(&rawTime);
+
+  background_rounded_draw(&background_hours);
+  background_rounded_draw(&background_minutes);
+
+  time_draw(_time);
+
   if (!twentyfourh)
-      drawAMPM(screen, _time);
-  drawDivider(screen);
-  */
+  {
+    ampm_draw(_time);
+  }
+
+  divider_draw();
+
+  SDL_RenderPresent(renderer_g);
 }
 
-void
-exitImmediately(int sig)
+static void
+sdl_init(void)
 {
-  exit(0);
+  window_g = SDL_CreateWindow("noflipqlo", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screen_width_k, screen_height_k, SDL_WINDOW_SHOWN);
+  renderer_g = SDL_CreateRenderer(window_g, -1, SDL_RENDERER_PRESENTVSYNC);
+  SDL_RenderSetLogicalSize(renderer_g, screen_width_k, screen_height_k);
+
+  TTF_Init();
+}
+
+static void
+sdl_deinit(void)
+{
+  SDL_DestroyRenderer(renderer_g);
+  SDL_DestroyWindow(window_g);
+  SDL_Quit();
+
+  TTF_Quit();
+}
+
+static void
+events_process(void)
+{
+  SDL_Event event = {0};
+  while (SDL_PollEvent(&event))
+  {
+    switch (event.type)
+    {
+      case SDL_KEYDOWN:
+        if (event.key.keysym.sym == SDLK_ESCAPE)
+          done = true;
+        break;
+      case SDL_QUIT:
+        done = true;
+        break;
+    }
+  }
 }
 
 int
 main(int argc, char** argv)
 {
-  signal(SIGINT, exitImmediately);
-  signal(SIGTERM, exitImmediately);
-
-  char* wid_env;
-  static char sdlwid[100];
-  Uint32 wid = 0;
-  Display* display;
-  XWindowAttributes windowAttributes;
-  windowAttributes.height = 0;
-  windowAttributes.width = 0;
+  static char sdlwid[100] = {0};
+  unsigned int wid;
+  Display* display = NULL;
+  XWindowAttributes windowAttributes = {0};
 
   /* If no window argument, check environment */
-  if (wid == 0)
+  char* wid_env = NULL;
+  if (!wid)
   {
-    if ((wid_env = getenv("XSCREENSAVER_WINDOW")) != NULL)
+    if (wid_env = getenv("XSCREENSAVER_WINDOW"))
     {
       wid = strtol(wid_env, (char**)NULL, 0); /* Base 0 autodetects hex/dec */
     }
   }
 
   /* Get win attrs if we've been given a window, otherwise we'll use our own */
-  if (wid != 0)
+  if (!wid)
   {
-    if ((display = XOpenDisplay(NULL)) != NULL)
+    if (display = XOpenDisplay(NULL))
     { /* Use the default display */
       XGetWindowAttributes(display, (Window)wid, &windowAttributes);
       XCloseDisplay(display);
@@ -325,30 +302,23 @@ main(int argc, char** argv)
     }
     else if (strcmp("-r", argv[i]) == 0 || strcmp("--resolution", argv[i]) == 0)
     {
-      char* resolution;
-      resolution = argv[i + 1];
-      char* value;
-      value = strtok(resolution, "x");
+      char* resolution = argv[i + 1];
+      char* value = strtok(resolution, "x");
       int i = atoi(value);
-      // printf("Value : %d\n", i );
       value = strtok(NULL, "x");
       i = atoi(value);
-      // printf("Value : %d\n", i );
     }
     else if (strcmp("-w", argv[i]) == 0)
     {
-      customWidth = atoi(argv[i + 1]);
-      // printf ("Width : %d\n", customWidth);
+      screen_width_custom = atoi(argv[i + 1]);
     }
     else if (strcmp("-h", argv[i]) == 0)
     {
-      customHeight = atoi(argv[i + 1]);
-      // printf ("Height: %d\n", customHeight);
+      screen_height_custom = atoi(argv[i + 1]);
     }
     else if (strcmp("-f", argv[i]) == 0 || strcmp("--font", argv[i]) == 0)
     {
-      FONT_CUSTOM_FILE = argv[i + 1];
-      // printf("Custom font:%s", FONT_CUSTOM_FILE);
+      font_custom_path_g = argv[i + 1];
     }
     else
     {
@@ -357,74 +327,33 @@ main(int argc, char** argv)
       return 0;
     }
   }
-  int width = DEFAULT_WIDTH;
-  int height = DEFAULT_HEIGHT;
-  if (customHeight > 0)
+
+  if (screen_height_custom <= 0)
   {
-    height = customHeight;
-    width = customWidth;
-  }
-  else
-  {
-    customHeight = DEFAULT_HEIGHT;
-    customWidth = DEFAULT_WIDTH;
+    screen_height_custom = screen_height_k;
+    screen_width_custom = screen_width_k;
   }
 
-  initSDL();
-  TTF_Init();
-  initResources();
+  sdl_init();
   SDL_ShowCursor(SDL_DISABLE);
+  resources_init();
 
-  atexit(SDL_Quit);
-  atexit(TTF_Quit);
+  if (fullscreen)
+  {
+    SDL_SetWindowFullscreen(window_g, SDL_WINDOW_FULLSCREEN_DESKTOP);
 
-  /*
-      if(fullscreen) {
-          //XXX: screen = SDL_SetVideoMode(windowAttributes.width, windowAttributes.height,32,SDL_HWSURFACE|SDL_DOUBLEBUF|SDL_FULLSCREEN);
-      } else {
-          //XXX: screen = SDL_SetVideoMode(width, height, 32,SDL_HWSURFACE|SDL_DOUBLEBUF);
-      }
-  */
+    screen_height_custom = screen_height_k;
+    screen_width_custom = screen_width_k;
+  }
 
-  // Initial draw.
-  drawAll();
-  bool done = false;
   while (!done)
   {
-    SDL_Event event;
-    while (SDL_PollEvent(&event))
-    {
-      switch (event.type)
-      {
-        case SDL_USEREVENT:
-          drawAll();
-          break;
-        case SDL_KEYDOWN:
-          if (event.key.keysym.sym == SDLK_ESCAPE)
-            done = true;
-          break;
-        case SDL_QUIT:
-          done = true;
-          break;
-      }
-    }
+    events_process();
+    draw();
 
-    struct tm* time_i;
-    Uint32 ms_to_next_minute;
-
-    checkTime(&time_i, &ms_to_next_minute);
-    /*
-    if(ms_to_next_minute > 100) {
-        // Wait a bit less to make sure event fires at the right time.
-        //SDL_Delay(ms_to_next_minute - 100);
-    } else {
-        //SDL_Delay(30);
-    }
-    */
+    struct tm* time_i = NULL;
   }
-  // SDL_FreeSurface(screen);
-  TTF_CloseFont(FONT_TIME);
-  TTF_CloseFont(FONT_MODE);
-  // printf("Exited cleanly\n");
+  resources_deinit();
+  sdl_deinit();
   return 0;
 }
