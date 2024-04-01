@@ -1,17 +1,16 @@
-    #include <stdlib.h>
-#ifdef __APPLE__
-    #include <SDL/SDL.h>
-#else
-    #include "SDL.h"
-#endif
-#include "SDL_ttf.h"
-#include "SDL_syswm.h"
-#include "SDL_gfxPrimitives.h"
-#include <sys/time.h>
+#include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include <time.h>
-#include <X11/Xlib.h>
 #include <signal.h>
+
+#include <X11/Xlib.h>
+
+#include <SDL.h>
+#include <SDL_ttf.h>
+#include <SDL_syswm.h>
+#include <SDL_gfxPrimitives.h>
+
 int past_m=0;
 
 bool twentyfourh = true;
@@ -43,7 +42,7 @@ const Uint32 COLOR_BACKGROUND = 0x0a0a0a;
 
 
 void checkTime(struct tm **time_i, Uint32 *ms_to_next_minute) {
-    timeval tv;
+    struct timeval tv;
     gettimeofday(&tv, NULL);
     *time_i = localtime(&tv.tv_sec);
 
@@ -176,7 +175,7 @@ void drawDivider(SDL_Surface * surface) {
     SDL_Flip(surface);
 }
 
-void drawAMPM(SDL_Surface * surface, tm * _time) {
+void drawAMPM(SDL_Surface * surface, struct tm * _time) {
     SDL_Rect cords;
     cords.x = (hourBackground.h * 0.024) + hourBackground.x;
     cords.y = (hourBackground.h * 0.071) + hourBackground.y;
@@ -188,7 +187,7 @@ void drawAMPM(SDL_Surface * surface, tm * _time) {
     SDL_Flip(surface);
 }
 
-void drawTime(SDL_Surface *surface, tm * _time) {
+void drawTime(SDL_Surface *surface, struct tm * _time) {
         char hour[3];
         if (twentyfourh)
             strftime(hour, 3, "%H", _time);
