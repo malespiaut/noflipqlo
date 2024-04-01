@@ -1,9 +1,9 @@
 #Compiler
-CC=g++
+CC=gcc
 #Flags
 #CFLAGS= -Wall `sdl-config --cflags`  `sdl-config --libs` -lX11 -lSDL_ttf -lSDL_gfx main.cpp -o noflipqlo
 CFLAGS= -o noflipqlo main.cpp `sdl-config --libs --cflags`
-LDFLAGS=  -lX11 -lSDL_ttf -lSDL_gfx
+LDFLAGS=  -lX11 -lSDL_ttf -lSDL_gfx -lm
 
 all: noflipqlo
 

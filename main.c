@@ -1,8 +1,4 @@
-#ifdef __cplusplus
-    #include <cstdlib>
-#else
     #include <stdlib.h>
-#endif
 #ifdef __APPLE__
     #include <SDL/SDL.h>
 #else
@@ -13,11 +9,9 @@
 #include "SDL_gfxPrimitives.h"
 #include <sys/time.h>
 #include <string.h>
-#include <ctime>
-#include <string>
+#include <time.h>
 #include <X11/Xlib.h>
 #include <signal.h>
-using namespace std;
 int past_m=0;
 
 bool twentyfourh = true;
@@ -41,7 +35,7 @@ int screenHeight = 0;
 const int DEFAULT_WIDTH = 640;
 const int DEFAULT_HEIGHT = 480;
 
-const char* FONT_FILE_BOLD = "/usr/share/fonts/truetype/droid/DroidSans-Bold.ttf";
+const char* FONT_FILE_BOLD = "/usr/share/fonts/droid/DroidSans-Bold.ttf";
 const char* FONT_FILE_FALLBACK = "/usr/share/fonts/truetype/ubuntu-font-family/Ubuntu-B.ttf";
 const char* FONT_CUSTOM_FILE = "";
 const Uint32 COLOR_FONT = 0xb7b7b7FF;
@@ -92,7 +86,6 @@ int initSDL() {
 }
 
 int initResources() {
-    try {
         screen = SDL_SetVideoMode(0,0,32, SDL_FULLSCREEN);
         screenHeight = screen->h;
         screenWidth = screen->w;
@@ -108,19 +101,6 @@ int initResources() {
             FONT_TIME = TTF_OpenFont(FONT_CUSTOM_FILE, customHeight / 2);
             FONT_TIME = TTF_OpenFont(FONT_CUSTOM_FILE, customHeight / 15);
         }
-
-        if (!screen)
-            throw 2;
-        if (!FONT_TIME)
-            throw 1;
-    } catch (int param) {
-        if (param == 1)
-            printf("TTF_OpenFont: %s\n", TTF_GetError());
-        else if (param == 2)
-            printf("Couldn't initialize video mode to check native, fullscreen resolution.\n");
-
-        return param;
-    }
 
     /* CALCULATE BACKGROUND COORDINATES */
     hourBackground.y = 0.2 * customHeight;
@@ -209,7 +189,6 @@ void drawAMPM(SDL_Surface * surface, tm * _time) {
 }
 
 void drawTime(SDL_Surface *surface, tm * _time) {
-    try {
         char hour[3];
         if (twentyfourh)
             strftime(hour, 3, "%H", _time);
@@ -229,9 +208,6 @@ void drawTime(SDL_Surface *surface, tm * _time) {
         coordinates = getCoordinates(&minBackground, text);
         SDL_BlitSurface(text, 0, screen, &coordinates);
         SDL_Flip(surface);
-    } catch (...) {
-        printf ("Problem drawing time");
-    }
 }
 
 void drawAll(void) {
@@ -339,20 +315,11 @@ int main (int argc, char** argv ) {
     atexit(SDL_Quit);
     atexit(TTF_Quit);
 
-    try {
         if(fullscreen) {
             screen = SDL_SetVideoMode(windowAttributes.width, windowAttributes.height,32,SDL_HWSURFACE|SDL_DOUBLEBUF|SDL_FULLSCREEN);
         } else {
             screen = SDL_SetVideoMode(width, height, 32,SDL_HWSURFACE|SDL_DOUBLEBUF);
         }
-        if (!screen) {
-            throw 2;
-        }
-    } catch (int param) {
-        if (param == 2)
-            printf("Unable to set video mode: %s\n", SDL_GetError());
-        return 2;
-    }
 
     // Initial draw.
     drawAll();
