@@ -13,6 +13,7 @@
 #include "SDL_gfxPrimitives.h"
 #include <sys/time.h>
 #include <string.h>
+#include <ctime>
 #include <string>
 #include <X11/Xlib.h>
 #include <signal.h>
