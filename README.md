@@ -1,10 +1,6 @@
 # Now Open Fliqlo
 
-## This is a very old code.
-~~If you have will to upkeep this. Feel free to contact me, I'll put it up here.
-If you are finding this, please see issues and forks made of this repo.~~
-
-You may want to check out https://github.com/alexanderk23/gluqlo
+![screenshot](./screenshot.png)
 
 # Whats that?
 It's Open Source port of Fliqlo screensaver for Windows and OSX platforms.
