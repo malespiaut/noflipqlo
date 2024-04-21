@@ -90,7 +90,7 @@ circle_fill(SDL_FPoint p, float radius, SDL_Color c)
 }
 
 static void
-background_rounded_draw(SDL_FRect* coordinates)
+background_rounded_draw(const SDL_FRect* coordinates)
 {
   int background_size = screen_height_custom * 0.6f;
   float radius = 10.0f;
@@ -104,7 +104,7 @@ background_rounded_draw(SDL_FRect* coordinates)
 }
 
 static SDL_FPoint
-coordinates_get(SDL_FRect* background, SDL_Surface* foreground)
+coordinates_get(const SDL_FRect* background, const SDL_Surface* foreground)
 {
   int dx = (background->w - foreground->w) * 0.5f;
   int dy = (background->h - foreground->h) * 0.5f;
@@ -130,7 +130,7 @@ divider_draw(void)
 }
 
 static void
-ampm_draw(struct tm* _time)
+ampm_draw(const struct tm* _time)
 {
   SDL_FPoint coordinates = {
     .x = (background_hours.h * 0.024f) + background_hours.x,
@@ -148,7 +148,7 @@ ampm_draw(struct tm* _time)
 }
 
 static void
-time_draw(struct tm* _time)
+time_draw(const struct tm* _time)
 {
   char hour[3] = {0};
   if (twentyfourh)
@@ -191,7 +191,7 @@ draw(void)
 
   time_t rawTime = {0};
   time(&rawTime);
-  struct tm* _time = localtime(&rawTime);
+  const struct tm* _time = localtime(&rawTime);
 
   background_rounded_draw(&background_hours);
   background_rounded_draw(&background_minutes);
