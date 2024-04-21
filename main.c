@@ -19,7 +19,7 @@ bool fullscreen = false;
 
 TTF_Font* font_time_g = NULL;
 TTF_Font* font_mode_g = NULL;
-const SDL_Color font_color_white_k = {176, 176, 176};
+const SDL_Color font_color_white_k = {.r = 176, .g = 176, .b = 176, .a = 0};
 
 SDL_FRect background_hours = {0};
 SDL_FRect background_minutes = {0};
@@ -84,7 +84,6 @@ circle_fill(SDL_FPoint p, float radius, SDL_Color c)
   for (float dy = 1.0f; dy <= radius; dy += 1.0f)
   {
     float dx = floorf(sqrtf((2.0f * radius * dy) - (dy * dy)));
-    float x = p.x - dx;
     SDL_RenderDrawLineF(renderer_g, p.x - dx, p.y + dy - radius, p.x + dx, p.y + dy - radius);
     SDL_RenderDrawLineF(renderer_g, p.x - dx, p.y - dy + radius, p.x + dx, p.y - dy + radius);
   }
@@ -252,6 +251,7 @@ int
 main(int argc, char** argv)
 {
   static char sdlwid[100] = {0};
+  /* This variable MUST stay uninitialised for the X11 window to work */
   unsigned int wid;
   Display* display = NULL;
   XWindowAttributes windowAttributes = {0};
@@ -260,7 +260,8 @@ main(int argc, char** argv)
   char* wid_env = NULL;
   if (!wid)
   {
-    if (wid_env = getenv("XSCREENSAVER_WINDOW"))
+    wid_env = getenv("XSCREENSAVER_WINDOW");
+    if (wid_env)
     {
       wid = strtol(wid_env, (char**)NULL, 0); /* Base 0 autodetects hex/dec */
     }
@@ -269,7 +270,8 @@ main(int argc, char** argv)
   /* Get win attrs if we've been given a window, otherwise we'll use our own */
   if (!wid)
   {
-    if (display = XOpenDisplay(NULL))
+    display = XOpenDisplay(NULL);
+    if (display)
     { /* Use the default display */
       XGetWindowAttributes(display, (Window)wid, &windowAttributes);
       XCloseDisplay(display);
@@ -299,14 +301,6 @@ main(int argc, char** argv)
     else if (strcmp("-ampm", argv[i]) == 0 || strcmp("--ampm", argv[i]) == 0)
     {
       twentyfourh = false;
-    }
-    else if (strcmp("-r", argv[i]) == 0 || strcmp("--resolution", argv[i]) == 0)
-    {
-      char* resolution = argv[i + 1];
-      char* value = strtok(resolution, "x");
-      int i = atoi(value);
-      value = strtok(NULL, "x");
-      i = atoi(value);
     }
     else if (strcmp("-w", argv[i]) == 0)
     {
@@ -350,8 +344,6 @@ main(int argc, char** argv)
   {
     events_process();
     draw();
-
-    struct tm* time_i = NULL;
   }
   resources_deinit();
   sdl_deinit();

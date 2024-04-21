@@ -10,7 +10,7 @@ SRC_PATH = .
 # Space-separated pkg-config libraries used by this project
 LIBS = sdl2 SDL2_ttf x11
 # General compiler flags
-COMPILE_FLAGS = -Wall -Wextra -w
+COMPILE_FLAGS = -Wall -Wextra -Wpedantic -Wshadow
 # Additional release-specific flags
 RCOMPILE_FLAGS = -D NDEBUG
 # Additional debug-specific flags
