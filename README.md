@@ -18,19 +18,11 @@ Ever seen a flip clock? No. Google one out. Freaky technology.
 * Moved away from using a bitmap onto drawing with primitives to draw a background. Still needs aliasing for jagged corners;
 * Custom width, height, Truetype font now supported.
 
-# INSTALLATION
-Compile and install files with:
+# BUILD
+Compile with:
 
-	make && sudo make install
+	make
 	
-Install dependencies with
-
-	install-dependancies.sh
-
-To force xscreensaver use
-
-	force_gnome-screensaver_off.sh
-
 # LICENSE
 
 This code is published under a MIT license
